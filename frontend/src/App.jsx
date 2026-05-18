@@ -27,17 +27,43 @@ import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import { instance as createVizInstance } from "@viz-js/viz";
 import GraphView from "./components/GraphView";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
-const AASQL_PATH = "/aasql";
-const FAQ_PATH = "/faq";
-const HOME_PATH = "/";
-const SWAGGER_URL = "/docs";
+const APP_BASE_PATH = (window.__APP_BASE_PATH__ || "").trim().replace(/\/+$/, "");
+
+function withBasePath(path) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (!APP_BASE_PATH) {
+    return normalizedPath;
+  }
+  if (normalizedPath === "/") {
+    return `${APP_BASE_PATH}/`;
+  }
+  return `${APP_BASE_PATH}${normalizedPath}`;
+}
+
+function stripBasePath(pathname) {
+  if (!APP_BASE_PATH) {
+    return pathname;
+  }
+  if (pathname === APP_BASE_PATH) {
+    return "/";
+  }
+  if (pathname.startsWith(`${APP_BASE_PATH}/`)) {
+    return pathname.slice(APP_BASE_PATH.length);
+  }
+  return pathname;
+}
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || APP_BASE_PATH;
+const AASQL_PATH = withBasePath("/aasql");
+const FAQ_PATH = withBasePath("/faq");
+const HOME_PATH = withBasePath("/");
+const SWAGGER_URL = withBasePath("/docs");
 const LINKEDIN_URL = "https://www.linkedin.com/in/mhrimaz/";
 const REACTODIA_URL = "https://reactodia.github.io/";
 const METAPHACTS_URL = "https://metaphacts.com/";
 const PY_AAS_RDF_URL = "https://github.com/mhrimaz/py-aas-rdf";
 const DOCKERHUB_LOCAL_SETUP = "docker run --rm -p 8000:8000 mhrimaz/aas-rdf-util:latest";
-const FAQ_INDEX_PATH = "/faq-index.json";
+const FAQ_INDEX_PATH = withBasePath("/faq-index.json");
 
 async function postJson(path, body) {
   const payload = await postJsonPayload(path, body);
@@ -68,8 +94,9 @@ async function copyToClipboard(text) {
 }
 
 function getCurrentPage() {
-  if (window.location.pathname.startsWith(FAQ_PATH)) return "faq";
-  if (window.location.pathname.startsWith(AASQL_PATH)) return "aasql";
+  const appPath = stripBasePath(window.location.pathname);
+  if (appPath.startsWith("/faq")) return "faq";
+  if (appPath.startsWith("/aasql")) return "aasql";
   return "home";
 }
 

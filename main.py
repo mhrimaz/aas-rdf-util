@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.aasql_pipeline import (
@@ -21,10 +22,25 @@ from app.aasql_pipeline import (
 from app.converters import json_to_rdf_turtle, rdf_turtle_to_json
 from app.schemas import AASQLConvertRequest, AASQLParseTreeResponse, ConversionResponse, JsonToRdfRequest, RdfToJsonRequest
 
+
+def _normalize_root_path(value: str | None) -> str:
+    if not value:
+        return ""
+    stripped = value.strip()
+    if not stripped or stripped == "/":
+        return ""
+    if not stripped.startswith("/"):
+        stripped = f"/{stripped}"
+    return stripped.rstrip("/")
+
+
+FASTAPI_ROOT_PATH = _normalize_root_path(os.getenv("FASTAPI_ROOT_PATH"))
+
 app = FastAPI(
     title="py-aas-rdf utility API",
     description="Convert AAS JSON to RDF, RDF to JSON, and AASQL/AASQL-JSON to SPARQL.",
     version="0.1.0",
+    root_path=FASTAPI_ROOT_PATH,
 )
 
 app.add_middleware(
@@ -128,12 +144,24 @@ if FRONTEND_DIST.exists():
     if assets_dir.exists():
         app.mount("/assets", StaticFiles(directory=assets_dir), name="frontend-assets")
 
+    def _render_index_html() -> HTMLResponse:
+        index_file = FRONTEND_DIST / "index.html"
+        html = index_file.read_text(encoding="utf-8")
+
+        if FASTAPI_ROOT_PATH:
+            html = html.replace('src="/assets/', f'src="{FASTAPI_ROOT_PATH}/assets/')
+            html = html.replace('href="/assets/', f'href="{FASTAPI_ROOT_PATH}/assets/')
+
+        config_script = f"<script>window.__APP_BASE_PATH__ = {json.dumps(FASTAPI_ROOT_PATH)};</script>"
+        html = html.replace("</head>", f"{config_script}</head>")
+        return HTMLResponse(content=html)
+
     @app.get("/", include_in_schema=False)
-    async def frontend_index() -> FileResponse:
-        return FileResponse(FRONTEND_DIST / "index.html")
+    async def frontend_index() -> HTMLResponse:
+        return _render_index_html()
 
     @app.get("/{full_path:path}", include_in_schema=False)
-    async def frontend_spa(full_path: str) -> FileResponse:
+    async def frontend_spa(full_path: str) -> FileResponse | HTMLResponse:
         if full_path.startswith("api/"):
             raise HTTPException(status_code=404, detail="Not Found")
 
@@ -141,7 +169,7 @@ if FRONTEND_DIST.exists():
         if full_path and target.exists() and target.is_file():
             return FileResponse(target)
 
-        return FileResponse(FRONTEND_DIST / "index.html")
+        return _render_index_html()
 
 
 if __name__ == "__main__":
