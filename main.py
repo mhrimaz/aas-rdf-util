@@ -8,7 +8,7 @@ from typing import Any
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.aasql_pipeline import (
@@ -160,8 +160,8 @@ if FRONTEND_DIST.exists():
     async def frontend_index() -> HTMLResponse:
         return _render_index_html()
 
-    @app.get("/{full_path:path}", include_in_schema=False)
-    async def frontend_spa(full_path: str) -> FileResponse | HTMLResponse:
+    @app.get("/{full_path:path}", include_in_schema=False, response_model=None)
+    async def frontend_spa(full_path: str) -> Response:
         if full_path.startswith("api/"):
             raise HTTPException(status_code=404, detail="Not Found")
 
