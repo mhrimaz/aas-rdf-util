@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -40,7 +40,6 @@ app = FastAPI(
     title="py-aas-rdf utility API",
     description="Convert AAS JSON to RDF, RDF to JSON, and AASQL/AASQL-JSON to SPARQL.",
     version="0.1.0",
-    root_path=FASTAPI_ROOT_PATH,
 )
 
 app.add_middleware(
@@ -50,6 +49,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+if FASTAPI_ROOT_PATH:
+    @app.middleware("http")
+    async def strip_configured_root_path(request: Request, call_next):
+        path = request.scope.get("path", "")
+        if path == FASTAPI_ROOT_PATH:
+            request.scope["path"] = "/"
+        elif path.startswith(f"{FASTAPI_ROOT_PATH}/"):
+            request.scope["path"] = path[len(FASTAPI_ROOT_PATH):] or "/"
+
+        return await call_next(request)
 
 
 @app.get("/api/health")

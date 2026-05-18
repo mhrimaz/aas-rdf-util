@@ -1,4 +1,5 @@
 FROM cgr.dev/chainguard/node:latest AS frontend-build
+USER root
 
 WORKDIR /frontend
 COPY frontend/package*.json ./
