@@ -1,0 +1,2 @@
+LLM discovery entry point: /llms.txt
+Canonical FAQ content: /faq-index.json

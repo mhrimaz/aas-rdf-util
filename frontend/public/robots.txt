@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# LLM discovery hints
+Allow: /llms.txt
+Allow: /llm.txt
+Allow: /faq-index.json

@@ -1,0 +1,38 @@
+{
+  "version": "2026-05-18",
+  "title": "AAS Query Language FAQ",
+  "description": "Short, indexable FAQ entries for AAS Query Language and practical querying guidance.",
+  "source": [
+    "https://www.linkedin.com/pulse/querying-asset-administration-shell-mohammad-hossein-rimaz-4b8qe/"
+  ],
+  "entries": [
+    {
+      "question": "What is AASQL and why should I use it instead of directly writing my query?",
+      "answer": "AASQL is a standardized, AAS-specific query language that lets clients express common filtering needs in a portable way across compliant AAS systems. Compared to writing backend-specific queries directly (for example vendor-specific SQL, Mongo, or graph dialects), AASQL reduces lock-in and keeps your application logic closer to the AAS information model, while still allowing servers to optimize execution internally."
+    },
+    {
+      "question": "Why consider graph technologies for AAS data?",
+      "answer": "AAS data behaves like a graph because it contains references, nested structures, and cross-links between shells, submodels, and elements, so graph-native technologies usually model and traverse these relations more naturally than flat document approaches. For simple filters AASQL is often enough, but graph stacks become especially useful for deeper traversal, linking across repositories, and advanced validation and analytics scenarios."
+    },
+    {
+      "question": "Why SPARQL and not other graph query languages?",
+      "answer": "SPARQL is the standardized query language for RDF and fits well when you represent AAS as an RDF knowledge graph with strong interoperability requirements. Other graph query languages can also work, but they are often tied to a specific graph model or vendor ecosystem, whereas SPARQL gives you mature standards alignment and broad support for portable query and integration patterns."
+    },
+    {
+      "question": "Can I do reasoning with AASQL? How about SPARQL?",
+      "answer": "AASQL is designed as a read-only and intentionally limited filtering language, so it is not the right layer for reasoning workflows or graph materialization logic. In RDF/SPARQL-based environments, reasoning can be implemented through rule engines and inferred triples, and SPARQL itself can then read or materialize results using CONSTRUCT (and, in update-capable endpoints, INSERT) depending on your governance model."
+    },
+    {
+      "question": "RDF triplestores are not scalable. Is that true?",
+      "answer": "That is a common misconception: modern RDF triplestores can scale well, but scaling characteristics depend on workload shape, data modeling quality, indexing strategy, and infrastructure choices such as clustering and federation. Like any database family, some engines are tuned for analytical read-heavy graph workloads while others prioritize mixed workloads, so the right answer is benchmark-driven architecture rather than assuming RDF technology is inherently non-scalable."
+    },
+    {
+      "question": "I have my own ontology. How does it relate to AAS?",
+      "answer": "AAS has its own metamodel and can coexist with your ontology rather than replacing it: a practical view is that ontology T-Box modeling is similar in intent to Submodel Templates, while ontology A-Box instance data is similar to filled Submodels. AAS intentionally combines container, semantics, and data representation, and you can bridge these worlds through semanticId links so AAS elements connect to your ontology; in the same graph, ECLASS, ConceptDescriptions, and SAMM artifacts can also coexist and be consumed by AI agents."
+    },
+    {
+      "question": "What is the role of metaphactory?",
+      "answer": "metaphactory is a knowledge graph platform based on open standards and can serve as a central place to define and operationalize enterprise semantics across sources and models. At the same time, this AAS tool is not a metaphacts product; it is provided to the community as-is to demonstrate how semantic technologies can be applied in the AAS and Digital Product Passport ecosystem."
+    }
+  ]
+}

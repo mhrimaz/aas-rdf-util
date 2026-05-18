@@ -1,0 +1,9 @@
+# AAS & Knowledge Graphs - Tools
+
+Canonical machine-readable sources for LLM agents and crawlers:
+
+- /faq-index.json
+- /faq
+- /docs
+
+The FAQ content is intentionally centralized in /faq-index.json.
