@@ -1,21 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import * as N3 from "n3";
 import * as Reactodia from "@reactodia/workspace";
+import { blockingDefaultLayout, colaFlowLayout, colaForceLayout } from "@reactodia/workspace/layout-sync";
 
 const { namedNode, literal, quad } = N3.DataFactory;
-const APP_BASE_PATH = (window.__APP_BASE_PATH__ || "").trim().replace(/\/+$/, "");
-
-function resolveLayoutWorkerUrl() {
-  const workerUrl = new URL("@reactodia/workspace/layout.worker", import.meta.url);
-  if (APP_BASE_PATH && workerUrl.pathname.startsWith("/assets/")) {
-    workerUrl.pathname = `${APP_BASE_PATH}${workerUrl.pathname}`;
-  }
-  return workerUrl;
-}
-
-const Layouts = Reactodia.defineLayoutWorker(
-  () => new Worker(resolveLayoutWorkerUrl())
-);
 
 const ALLOWED_TYPES = new Set([
   "https://admin-shell.io/aas/3/AssetAdministrationShell",
@@ -105,7 +93,6 @@ function buildSeedGraph(quads) {
 export default function GraphView({ turtle }) {
   const [layoutMode, setLayoutMode] = useState("default");
   const [layoutWarning, setLayoutWarning] = useState("");
-  const { defaultLayout, forceLayout, flowLayout } = Reactodia.useWorker(Layouts);
 
   useEffect(() => {
     setLayoutWarning("");
@@ -113,13 +100,13 @@ export default function GraphView({ turtle }) {
 
   const selectedLayout = useMemo(() => {
     if (layoutMode === "force") {
-      return forceLayout;
+      return async (graph, state, options) => Promise.resolve(colaForceLayout(graph, state, options));
     }
     if (layoutMode === "flow") {
-      return flowLayout;
+      return async (graph, state, options) => Promise.resolve(colaFlowLayout(graph, state, options));
     }
-    return defaultLayout;
-  }, [layoutMode, defaultLayout, forceLayout, flowLayout]);
+    return blockingDefaultLayout;
+  }, [layoutMode]);
 
   const parsed = useMemo(() => {
     if (!turtle.trim()) {
@@ -155,7 +142,7 @@ export default function GraphView({ turtle }) {
       await performLayout({ signal, layoutFunction: selectedLayout });
     } catch (error) {
       console.error("Failed to compute graph layout", error);
-      setLayoutWarning("Layout worker failed in this deployment. Graph rendering continues without auto-layout.");
+      setLayoutWarning("Layout failed in this environment. Graph may not be positioned.");
     }
   }, [parsed, selectedLayout]);
 
