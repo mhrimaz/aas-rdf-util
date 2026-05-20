@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as N3 from "n3";
 import * as Reactodia from "@reactodia/workspace";
 
 const { namedNode, literal, quad } = N3.DataFactory;
 
 const Layouts = Reactodia.defineLayoutWorker(
-  () => new Worker(new URL("@reactodia/workspace/layout.worker", import.meta.url), { type: "module" })
+  () => new Worker(new URL("@reactodia/workspace/layout.worker", import.meta.url))
 );
 
 const ALLOWED_TYPES = new Set([
@@ -95,7 +95,12 @@ function buildSeedGraph(quads) {
 
 export default function GraphView({ turtle }) {
   const [layoutMode, setLayoutMode] = useState("default");
+  const [layoutWarning, setLayoutWarning] = useState("");
   const { defaultLayout, forceLayout, flowLayout } = Reactodia.useWorker(Layouts);
+
+  useEffect(() => {
+    setLayoutWarning("");
+  }, [turtle, layoutMode]);
 
   const selectedLayout = useMemo(() => {
     if (layoutMode === "force") {
@@ -137,7 +142,12 @@ export default function GraphView({ turtle }) {
     }
 
     await model.requestData();
-    await performLayout({ signal, layoutFunction: selectedLayout });
+    try {
+      await performLayout({ signal, layoutFunction: selectedLayout });
+    } catch (error) {
+      console.error("Failed to compute graph layout", error);
+      setLayoutWarning("Layout worker failed in this deployment. Graph rendering continues without auto-layout.");
+    }
   }, [parsed, selectedLayout]);
 
   let content = <div className="graph-placeholder">Convert JSON to RDF to visualize it here.</div>;
@@ -167,6 +177,9 @@ export default function GraphView({ turtle }) {
           <option value="flow">Flow (hierarchical)</option>
         </select>
       </div>
+      {layoutWarning && (
+        <div className="graph-layout-warning">{layoutWarning}</div>
+      )}
       <div className="graph-host">
         {content}
       </div>
