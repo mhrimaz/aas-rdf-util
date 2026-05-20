@@ -1,0 +1,69 @@
+{
+  "assetAdministrationShells": [
+    {
+      "id": "https://example.com/ids/aas/0493_5150_3062_0463",
+      "assetInformation": {
+        "assetKind": "Instance"
+      },
+      "submodels": [
+        {
+          "type": "ModelReference",
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "https://example.com/ids/sm/6593_5150_3062_4896"
+            }
+          ]
+        }
+      ],
+      "modelType": "AssetAdministrationShell"
+    }
+  ],
+  "submodels": [
+    {
+      "idShort": "Nameplate",
+      "id": "https://example.com/ids/sm/6593_5150_3062_4896",
+      "kind": "Instance",
+      "submodelElements": [
+        {
+          "idShort": "AssetTemperature",
+          "valueType": "xs:double",
+          "value": "0.5",
+          "modelType": "Property"
+        },
+        {
+          "idShort": "AssetName",
+          "value": [
+            {
+              "language": "en",
+              "text": "Pump"
+            },
+            {
+              "language": "de",
+              "text": "Pumpe"
+            }
+          ],
+          "modelType": "MultiLanguageProperty"
+        },
+        {
+          "idShort": "ManufacturerName",
+          "value": {
+            "type": "ModelReference",
+            "keys": [
+              {
+                "type": "Submodel",
+                "value": "https://example.com/Manufacturere"
+              },
+              {
+                "type": "Property",
+                "value": "name"
+              }
+            ]
+          },
+          "modelType": "ReferenceElement"
+        }
+      ],
+      "modelType": "Submodel"
+    }
+  ]
+}

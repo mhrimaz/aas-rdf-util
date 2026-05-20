@@ -3,9 +3,18 @@ import * as N3 from "n3";
 import * as Reactodia from "@reactodia/workspace";
 
 const { namedNode, literal, quad } = N3.DataFactory;
+const APP_BASE_PATH = (window.__APP_BASE_PATH__ || "").trim().replace(/\/+$/, "");
+
+function resolveLayoutWorkerUrl() {
+  const workerUrl = new URL("@reactodia/workspace/layout.worker", import.meta.url);
+  if (APP_BASE_PATH && workerUrl.pathname.startsWith("/assets/")) {
+    workerUrl.pathname = `${APP_BASE_PATH}${workerUrl.pathname}`;
+  }
+  return workerUrl;
+}
 
 const Layouts = Reactodia.defineLayoutWorker(
-  () => new Worker(new URL("@reactodia/workspace/layout.worker", import.meta.url))
+  () => new Worker(resolveLayoutWorkerUrl())
 );
 
 const ALLOWED_TYPES = new Set([

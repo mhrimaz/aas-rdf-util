@@ -64,6 +64,8 @@ const METAPHACTS_URL = "https://metaphacts.com/";
 const PY_AAS_RDF_URL = "https://github.com/mhrimaz/py-aas-rdf";
 const DOCKERHUB_LOCAL_SETUP = "docker run --rm -p 8000:8000 mhrimaz/aas-rdf-util:latest";
 const FAQ_INDEX_PATH = withBasePath("/faq-index.json");
+const BATTERY_EXAMPLE_PATH = withBasePath("/example-battery-passport.json");
+const SIMPLE_EXAMPLE_PATH = withBasePath("/simple-example.json");
 
 async function postJson(path, body) {
   const payload = await postJsonPayload(path, body);
@@ -355,7 +357,7 @@ function detectInputFormat(text) {
 function HomePage({ scrolled }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [sourceText, setSourceText] = useState('{\n  "modelType": "Environment"\n}');
+  const [sourceText, setSourceText] = useState("");
   const [resultText, setResultText] = useState("");
   const [resultKind, setResultKind] = useState("");
 
@@ -367,20 +369,85 @@ function HomePage({ scrolled }) {
   const shownOutput = resultKind === targetKind ? resultText : "";
   const graphTurtle = inputKind === "rdf" ? sourceText : (resultKind === "rdf" ? resultText : "");
 
+  const convertSource = async (text) => {
+    const detectedKind = detectInputFormat(text);
+    if (detectedKind === "json") {
+      const parsed = JSON.parse(text);
+      const output = await postJson("/api/convert/json-to-rdf", { data: parsed });
+      setResultText(output);
+      setResultKind("rdf");
+      return;
+    }
+
+    const output = await postJson("/api/convert/rdf-to-json", { turtle: text });
+    setResultText(output);
+    setResultKind("json");
+  };
+
+  const loadExample = async (path, autoConvert = true) => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(path, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`Failed to load example file (${response.status}).`);
+      }
+      const text = await response.text();
+      setSourceText(text);
+      if (autoConvert) {
+        await convertSource(text);
+      } else {
+        setResultText("");
+        setResultKind("");
+      }
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+
+    async function preloadSimpleExample() {
+      setLoading(true);
+      setError("");
+      try {
+        const response = await fetch(SIMPLE_EXAMPLE_PATH, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Failed to load default example file (${response.status}).`);
+        }
+        const text = await response.text();
+        if (!active) {
+          return;
+        }
+        setSourceText(text);
+        setResultText("");
+        setResultKind("");
+      } catch (err) {
+        if (active) {
+          setError(String(err));
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    preloadSimpleExample();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const runAutoConvert = async () => {
     setLoading(true);
     setError("");
     try {
-      if (inputKind === "json") {
-        const parsed = JSON.parse(sourceText);
-        const output = await postJson("/api/convert/json-to-rdf", { data: parsed });
-        setResultText(output);
-        setResultKind("rdf");
-      } else {
-        const output = await postJson("/api/convert/rdf-to-json", { turtle: sourceText });
-        setResultText(output);
-        setResultKind("json");
-      }
+      await convertSource(sourceText);
     } catch (err) {
       setError(String(err));
     } finally {
@@ -401,6 +468,20 @@ function HomePage({ scrolled }) {
             title="AAS JSON ⇄ RDF"
             action={<Chip label={`Detected: ${inputKind.toUpperCase()}`} size="small" />}
           >
+            <Typography variant="caption" color="text.secondary">
+              Examples:
+              {" "}
+              <Link component="button" type="button" underline="hover" onClick={() => loadExample(BATTERY_EXAMPLE_PATH)}>
+                battery pass example
+              </Link>
+              {" "}
+              |
+              {" "}
+              <Link component="button" type="button" underline="hover" onClick={() => loadExample(SIMPLE_EXAMPLE_PATH)}>
+                simple example
+              </Link>
+            </Typography>
+
             <EditableField
               label={inputLabel}
               value={sourceText}
